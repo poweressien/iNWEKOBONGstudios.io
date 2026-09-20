@@ -1,14 +1,14 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
-import App from './App'
+import '@fontsource/rajdhani/latin-600.css'
+import '@fontsource/rajdhani/latin-700.css'
 import './index.css'
+import App from './App'
 
-const rootEl = document.getElementById('root')
-if (!rootEl) {
-  throw new Error('Root element #root not found')
-}
+const root = document.getElementById('root')
+if (!root) throw new Error('#root not found')
 
-createRoot(rootEl).render(
+createRoot(root).render(
   <StrictMode>
     <App />
   </StrictMode>,

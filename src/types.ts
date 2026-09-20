@@ -1,20 +1,3 @@
-export type Vec3 = [number, number, number]
-
-export type GamePhase = 'loading' | 'intro' | 'playing'
-
-export type PanelType =
-  | 'about'
-  | 'projects-list'
-  | 'project'
-  | 'contact'
-  | 'github'
-  | 'settings'
-  | 'accessibility'
-  | 'ai'
-  | null
-
-export type Level = 'ground' | 'loft'
-
 export interface Skill {
   name: string
   color: string
@@ -34,12 +17,13 @@ export interface PlanetInfo {
   color: string
 }
 
-export interface FunnyButton {
+export interface PadInfo {
   label: string
   response: string
+  color: string
 }
 
-export interface AIAssistantConfig {
+export interface AIConfig {
   name: string
   tagline: string
   lines: string[]
@@ -48,6 +32,7 @@ export interface AIAssistantConfig {
 export interface PortfolioConfig {
   name: string
   role: string
+  headline: string
   tagline: string
   location: string
   bio: string
@@ -56,44 +41,34 @@ export interface PortfolioConfig {
   experience: ExperienceEntry[]
   interests: string[]
   skills: Skill[]
+  /** Leave as the placeholder (or empty) and the site simply hides the email button. */
   email: string
   githubUsername: string
   githubUrl: string
   linkedinUrl: string
+  /** Digits only, with country code — e.g. 2348012345678. Blank hides the WhatsApp button. */
   whatsappNumber: string
-  /** Leave empty to fall back to a mailto: draft instead of a real network request. */
+  /** Optional Formspree-style endpoint. When blank the form opens a pre-filled email instead. */
   contactFormEndpoint: string
-  /** Where the floating PC in the Space Hub sends visitors. */
+  /** Where the floating PC on the GitHub planet sends visitors. */
   externalSiteUrl: string
-  planetPoweressien: PlanetInfo
-  planetInwekobong: PlanetInfo
-  aiAssistant: AIAssistantConfig
-  funnyButtons: FunnyButton[]
+  planetGithub: PlanetInfo
+  planetHome: PlanetInfo
+  ai: AIConfig
+  pads: PadInfo[]
 }
+
+export type ProjectTag = 'game' | 'web' | 'mobile'
 
 export interface ProjectData {
   id: string
   title: string
+  /** Short arcade-marquee name (max ~9 chars looks best). */
+  short: string
   description: string
   tech: string[]
-  /** Leave undefined rather than guessing — only set this once you have the real URL. */
+  tags: ProjectTag[]
   githubUrl?: string
   liveUrl?: string
   accent: string
-}
-
-export interface BoxCollider {
-  minX: number
-  maxX: number
-  minZ: number
-  maxZ: number
-}
-
-export interface InteractableEntry {
-  id: string
-  label: string
-  /** World-space position, read live each frame (a ref-backed getter). */
-  getPosition: () => Vec3
-  radius: number
-  onInteract: () => void
 }

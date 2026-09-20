@@ -1,20 +1,20 @@
-import type { ReactNode } from 'react'
-import { motion } from 'framer-motion'
-import { useGameStore } from '@/store/gameStore'
-import { audioManager } from '@/lib/audio'
+import { useGame } from '@/store/gameStore'
+import { levelInfo, TOTAL_LANDMARKS, TOTAL_ORBS } from '@/game/progress'
 import { portfolio } from '@/data/portfolio'
-import { InteractionPrompt } from './InteractionPrompt'
-import { AccessibilityMenu } from './AccessibilityMenu'
+import { sfx } from '@/game/audio'
+import { LogoMark, IconMap, IconMenu, IconSoundOn, IconSoundOff, IconFullscreen, IconMail } from './Icons'
 
-function CornerButton({ onClick, active, label, children }: { onClick: () => void; active?: boolean; label: string; children: ReactNode }) {
+function IconBtn({ label, onClick, active, children }: { label: string; onClick: () => void; active?: boolean; children: React.ReactNode }) {
   return (
     <button
-      onClick={onClick}
+      onClick={() => {
+        sfx.click()
+        onClick()
+      }}
       aria-label={label}
+      title={label}
       aria-pressed={active}
-      className={`glass-panel flex h-9 w-9 items-center justify-center rounded-full transition ${
-        active ? 'text-[#6ea8ff]' : 'text-white/70 hover:text-white'
-      }`}
+      className={`hud-chip flex h-11 w-11 items-center justify-center transition hover:bg-white/10 active:scale-95 ${active ? 'text-accent' : 'text-white/85'}`}
     >
       {children}
     </button>
@@ -22,50 +22,98 @@ function CornerButton({ onClick, active, label, children }: { onClick: () => voi
 }
 
 export function HUD() {
-  const phase = useGameStore((s) => s.phase)
-  const soundEnabled = useGameStore((s) => s.soundEnabled)
-  const toggleSound = useGameStore((s) => s.toggleSound)
-  const openPanel = useGameStore((s) => s.openPanel)
+  const xp = useGame((s) => s.xp)
+  const visited = useGame((s) => s.visited.length)
+  const orbs = useGame((s) => s.orbs.length)
+  const moved = useGame((s) => s.moved)
+  const focus = useGame((s) => s.focus)
+  const touch = useGame((s) => s.touch)
+  const panel = useGame((s) => s.panel)
+  const sound = useGame((s) => s.sound)
+  const setSound = useGame((s) => s.setSound)
+  const openPanel = useGame((s) => s.openPanel)
 
-  if (phase !== 'playing') return null
+  const lv = levelInfo(xp)
 
-  const toggleFullscreen = () => {
-    audioManager.uiClick()
-    if (document.fullscreenElement) document.exitFullscreen()
-    else document.documentElement.requestFullscreen().catch(() => {})
+  let objective: string
+  if (!moved) objective = touch ? 'Drag anywhere to move' : 'Move with WASD or click to walk'
+  else if (visited < TOTAL_LANDMARKS) objective = `Discover landmarks  ${visited}/${TOTAL_LANDMARKS} — follow the arrow`
+  else if (orbs < TOTAL_ORBS) objective = `Collect skill orbs  ${orbs}/${TOTAL_ORBS}`
+  else objective = 'Everything found. Say hi to OBI — or hire me.'
+
+  const canFullscreen = typeof document !== 'undefined' && document.fullscreenEnabled
+  const toggleFs = () => {
+    if (document.fullscreenElement) void document.exitFullscreen()
+    else void document.documentElement.requestFullscreen().catch(() => {})
   }
 
   return (
-    <div className="pointer-events-none fixed inset-0 z-10">
-      <motion.div
-        initial={{ opacity: 0, y: -8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        className="pointer-events-auto fixed left-4 top-4 sm:left-6 sm:top-6"
+    <>
+      {/* top-left: identity, level, objective */}
+      <div
+        className="pointer-events-none absolute left-0 top-0 z-20 p-3 sm:p-5"
+        style={{ paddingTop: 'calc(var(--safe-t) + 12px)', paddingLeft: 'calc(var(--safe-l) + 12px)' }}
       >
-        <div className="glass-panel rounded-full px-4 py-2">
-          <span className="font-display text-sm font-semibold tracking-wide text-white/90">{portfolio.name}</span>
+        <div className="hud-chip pointer-events-auto flex w-fit items-center gap-2 py-1.5 pl-2 pr-4">
+          <LogoMark size={26} />
+          <span className="font-display text-lg font-bold tracking-wide">{portfolio.name}</span>
         </div>
-      </motion.div>
-
-      <div className="pointer-events-auto fixed right-4 top-4 flex gap-2 sm:right-6 sm:top-6">
-        <CornerButton onClick={() => { toggleSound(); audioManager.unlock() }} active={soundEnabled} label="Toggle sound">
-          {soundEnabled ? (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 9v6h4l5 5V4L8 9H4Z" /><path d="M17 8a5 5 0 0 1 0 8" /></svg>
-          ) : (
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M4 9v6h4l5 5V4L8 9H4Z" /><path d="m17 9 5 6M22 9l-5 6" /></svg>
-          )}
-        </CornerButton>
-        <CornerButton onClick={toggleFullscreen} label="Toggle fullscreen">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3" /></svg>
-        </CornerButton>
-        <CornerButton onClick={() => { audioManager.uiClick(); openPanel('settings') }} label="Settings">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="12" cy="12" r="3" /><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9c.14.36.22.75.22 1.15V10.85c.28.14.6.22.94.22H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1Z" /></svg>
-        </CornerButton>
+        <div className="hud-chip mt-2 w-[228px] !rounded-2xl px-3 py-2 sm:w-[264px]">
+          <div className="font-display flex items-baseline justify-between text-sm font-semibold tracking-wide">
+            <span>
+              LV {lv.level} <span className="text-white/55">· {lv.title}</span>
+            </span>
+            <span className="font-mono text-[11px] text-white/50">{xp} XP</span>
+          </div>
+          <div className="mt-1.5 h-[5px] overflow-hidden rounded-full bg-white/10">
+            <div
+              className="h-full rounded-full bg-gradient-to-r from-accent to-violet transition-[width] duration-500"
+              style={{ width: `${Math.round(lv.pct * 100)}%` }}
+            />
+          </div>
+          <div className="mt-1.5 text-[11px] leading-snug text-white/70">{objective}</div>
+        </div>
       </div>
 
-      <InteractionPrompt />
-      <AccessibilityMenu />
-    </div>
+      {/* top-right: buttons */}
+      <div
+        className="absolute right-0 top-0 z-20 flex items-center gap-2 p-3 sm:p-5"
+        style={{ paddingTop: 'calc(var(--safe-t) + 12px)', paddingRight: 'calc(var(--safe-r) + 12px)' }}
+      >
+        <button
+          onClick={() => {
+            sfx.click()
+            openPanel('contact')
+          }}
+          className="hud-chip font-display hidden h-11 items-center gap-2 !rounded-full bg-gradient-to-r from-mint/25 to-accent/20 px-4 text-[15px] font-bold tracking-wider text-white transition hover:brightness-125 sm:flex"
+        >
+          <IconMail size={17} /> HIRE ME
+        </button>
+        <IconBtn label="Map & fast travel (M)" onClick={() => openPanel('map')} active={panel === 'map'}>
+          <IconMap />
+        </IconBtn>
+        <IconBtn label={sound ? 'Mute sound' : 'Unmute sound'} onClick={() => setSound(!sound)}>
+          {sound ? <IconSoundOn /> : <IconSoundOff />}
+        </IconBtn>
+        {canFullscreen && !touch && (
+          <IconBtn label="Fullscreen" onClick={toggleFs}>
+            <IconFullscreen />
+          </IconBtn>
+        )}
+        <IconBtn label="Menu (Esc)" onClick={() => openPanel('menu')} active={panel === 'menu'}>
+          <IconMenu />
+        </IconBtn>
+      </div>
+
+      {/* desktop interaction prompt */}
+      {!touch && !panel && focus && (
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 flex justify-center pb-8" style={{ paddingBottom: 'calc(var(--safe-b) + 28px)' }}>
+          <div className="anim-toast hud-chip flex items-center gap-3 py-2 pl-2.5 pr-5">
+            <span className="kbd">E</span>
+            <span className="font-display text-[17px] font-semibold tracking-wide">{focus.prompt}</span>
+          </div>
+        </div>
+      )}
+    </>
   )
 }
