@@ -1,46 +1,46 @@
 import { lazy, Suspense, useEffect } from 'react'
-import { useGame } from '@/store/gameStore'
+import { useApp } from '@/store/appStore'
+import { ambience } from '@/lib/audio'
 
-const About = lazy(() => import('./panels/AboutPanel'))
-const Projects = lazy(() => import('./panels/ProjectsPanel'))
+const Studio = lazy(() => import('./panels/StudioPanel'))
+const Work = lazy(() => import('./panels/WorkPanel'))
 const Project = lazy(() => import('./panels/ProjectPanel'))
-const Contact = lazy(() => import('./panels/ContactPanel'))
-const Github = lazy(() => import('./panels/GithubPanel'))
-const Chat = lazy(() => import('./panels/ChatPanel'))
-const MapPanel = lazy(() => import('./panels/MapPanel'))
-const Menu = lazy(() => import('./panels/MenuPanel'))
+const Stack = lazy(() => import('./panels/StackPanel'))
+const Labs = lazy(() => import('./panels/LabsPanel'))
+const Signal = lazy(() => import('./panels/SignalPanel'))
+const Concierge = lazy(() => import('./panels/ConciergePanel'))
 
-/** Warm the panel chunks while the visitor is still on the title screen. */
 function prefetch() {
-  void import('./panels/AboutPanel')
-  void import('./panels/ProjectsPanel')
+  void import('./panels/StudioPanel')
+  void import('./panels/WorkPanel')
   void import('./panels/ProjectPanel')
-  void import('./panels/ContactPanel')
-  void import('./panels/ChatPanel')
-  void import('./panels/MapPanel')
-  void import('./panels/MenuPanel')
-  void import('./panels/GithubPanel')
+  void import('./panels/StackPanel')
+  void import('./panels/SignalPanel')
+  void import('./panels/ConciergePanel')
+  void import('./panels/LabsPanel')
 }
 
 export function Panels() {
-  const panel = useGame((s) => s.panel)
+  const panel = useApp((s) => s.panel)
 
   useEffect(() => {
     const idle = (window as unknown as { requestIdleCallback?: (cb: () => void) => void }).requestIdleCallback
     if (idle) idle(prefetch)
     else setTimeout(prefetch, 1500)
   }, [])
+  useEffect(() => {
+    if (panel) ambience.tick()
+  }, [panel])
 
   return (
     <Suspense fallback={null}>
-      {panel === 'about' && <About />}
-      {panel === 'projects' && <Projects />}
+      {panel === 'studio' && <Studio />}
+      {panel === 'work' && <Work />}
       {panel === 'project' && <Project />}
-      {panel === 'contact' && <Contact />}
-      {panel === 'github' && <Github />}
-      {panel === 'chat' && <Chat />}
-      {panel === 'map' && <MapPanel />}
-      {panel === 'menu' && <Menu />}
+      {panel === 'stack' && <Stack />}
+      {panel === 'labs' && <Labs />}
+      {panel === 'signal' && <Signal />}
+      {panel === 'concierge' && <Concierge />}
     </Suspense>
   )
 }

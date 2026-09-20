@@ -1,123 +1,82 @@
 import type { PortfolioConfig } from '@/types'
 
 /**
- * Everything on the site that isn't game art lives here.
- * Edit this file to make the portfolio yours — nothing else needs to change.
+ * Everything on the site that isn't scene art lives here.
+ * Edit this file to change the copy, contact details or skills — nothing else needs to change.
  */
 export const portfolio: PortfolioConfig = {
   name: 'iNWEKOBONG',
-  role: 'Full-Stack Developer',
-  headline: 'Full-Stack Developer · Game Builder',
-  tagline: 'I build stuff. A lot of stuff. Some of it even works on the first try.',
+  domain: 'technologies.io',
+  role: 'Full-Stack Engineer',
+  headline: 'Web platforms, mobile apps and games — engineered in Nigeria.',
+  tagline: 'Software for real users on real networks: fast, offline-tolerant and built to last.',
   location: 'Nigeria',
-  bio: "I'm iNWEKOBONG — self-taught, Nigeria-based, and allegedly incapable of having an idea without shipping it. Racing games, a quiz app that pays real cash, a social platform, offline business tools, a project to bond two SIM cards together because why not — if it's a slightly unhinged idea at 2am, there's a decent chance it's already live somewhere. Core stack is Python/Django on the backend, React/Flutter/vanilla JS on the front, usually shipped to Android via Capacitor before anyone asks me to.",
-  studio: 'iNWEKOBONG Studios',
+  studio: 'iNWEKOBONG Technologies',
+  bio: [
+    'iNWEKOBONG Technologies is an independent engineering studio building web platforms, mobile applications and games for Nigerian and African users.',
+    'The work spans gamified platforms that pay out real cash, social products, offline-first business tools, e-commerce systems for local retailers, and original racing and quiz games — usually taken from first commit to a live deployment by one engineer.',
+    'The core stack is Python and Django on the backend, with React, TypeScript and Flutter on the front, shipped to Android through Capacitor and React Native when a product needs to live on a phone.',
+  ],
   education:
-    'Self-taught — no formal CS degree. Learned by shipping real products for real clients and real users, then shipping the next one before the last one finished deploying.',
+    'Self-taught. No formal computer-science degree — the training has been shipping real products to real users, and learning whatever the next product demanded.',
   experience: [
     {
-      title: 'Founder & Developer',
-      org: 'iNWEKOBONG Studios',
+      title: 'Founder & Lead Engineer',
+      org: 'iNWEKOBONG Technologies',
       period: 'Ongoing',
       description:
-        'Independent studio building web apps, mobile games and backend services for Nigerian and African users — from client e-commerce platforms to original games.',
+        'Independent studio building web apps, mobile apps and games — from client e-commerce platforms to original titles — with an emphasis on offline-first design and low-data performance.',
     },
     {
       title: 'Freelance Full-Stack Developer',
       org: 'Independent clients',
       period: 'Ongoing',
       description:
-        'Custom Django and React builds for Nigerian businesses, including e-commerce, gamified platforms with real cash payouts, and offline-first mobile tools.',
+        'Custom Django and React builds for Nigerian businesses: retail management systems, gamified reward platforms with real payouts, and mobile tools that keep working without a connection.',
     },
   ],
-  interests: [
-    'Game development',
+  focus: [
     'Offline-first mobile apps',
-    'Connectivity tools for emerging markets',
-    'African-market fintech & commerce',
-    'Flooding the internet with side projects',
+    'Payments & fintech for African markets',
+    'Real-time multiplayer and quiz platforms',
+    'Game development for web and Android',
+    'Connectivity tooling for emerging markets',
   ],
   skills: [
-    { name: 'Python', color: '#ffd43b' },
-    { name: 'Django', color: '#3fae4e' },
-    { name: 'React', color: '#61dafb' },
-    { name: 'TypeScript', color: '#3d8bff' },
-    { name: 'JavaScript', color: '#f7df1e' },
-    { name: 'Flutter / Dart', color: '#3fb6ff' },
-    { name: 'React Native', color: '#7be3ff' },
-    { name: 'Node.js', color: '#7bc96f' },
-    { name: 'Three.js / Babylon.js', color: '#ffffff' },
-    { name: 'PostgreSQL / MySQL', color: '#5c8bd6' },
-    { name: 'Kotlin (native)', color: '#a97bff' },
-    { name: 'Paystack API', color: '#00c3f7' },
-    { name: 'Docker / CI', color: '#3aa0ff' },
-    { name: 'Git / GitHub', color: '#ff7a59' },
+    { name: 'Python', group: 'Backend' },
+    { name: 'Django', group: 'Backend' },
+    { name: 'Node.js', group: 'Backend' },
+    { name: 'PostgreSQL / MySQL', group: 'Backend' },
+    { name: 'Paystack API', group: 'Backend' },
+    { name: 'Docker / CI', group: 'Backend' },
+    { name: 'React', group: 'Frontend & Mobile' },
+    { name: 'TypeScript', group: 'Frontend & Mobile' },
+    { name: 'JavaScript', group: 'Frontend & Mobile' },
+    { name: 'Flutter / Dart', group: 'Frontend & Mobile' },
+    { name: 'React Native', group: 'Frontend & Mobile' },
+    { name: 'Kotlin (native)', group: 'Frontend & Mobile' },
+    { name: 'Three.js / Babylon.js', group: 'Graphics & Tooling' },
+    { name: 'Git / GitHub', group: 'Graphics & Tooling' },
   ],
 
-  // ── Contact ───────────────────────────────────────────────────────────
-  // Fill these in and the buttons appear automatically. Anything left blank
-  // (or still the placeholder) is simply hidden — never a dead link.
-  email: 'ADD_YOUR_EMAIL@example.com',
+  // ── Contact ─────────────────────────────────────────────────────────────
+  email: 'essiengodspower447@gmail.com',
+  phone: '09037086084',
+  whatsappNumber: '2349037086084',
   githubUsername: 'poweressien',
   githubUrl: 'https://github.com/poweressien',
-  linkedinUrl: '',
-  whatsappNumber: '',
   contactFormEndpoint: '',
-
-  externalSiteUrl: 'https://github.com/poweressien',
-
-  planetGithub: {
-    name: "POWERESSIEN'S PLANET",
-    tagline: 'The GitHub side of the operation',
-    blurb:
-      'This planet is made entirely of commits. Population: one developer and an alarming number of repositories. Local time is measured in deploys.',
-    color: '#5aa9ff',
-  },
-  planetHome: {
-    name: 'iNWEKOBONG',
-    tagline: 'The origin planet',
-    blurb:
-      "Home planet. Native lifeforms build things they didn't need to build, then build three more. Exports: web apps, mobile games, and an unreasonable number of side projects.",
-    color: '#9b7bff',
-  },
-
-  ai: {
-    name: 'OBI',
-    tagline: 'Obviously Better Intelligence',
-    lines: [
-      "Systems nominal. Founder's coffee levels: critical.",
-      'I run this universe. iNWEKOBONG just thinks he does.',
-      'Fun fact: I was built in a weekend. So was everything else here.',
-      'Current project count: too many. Recommend an intervention.',
-      'Psst — the glowing orbs are skills. Collect them all.',
-      'Ask me anything. I have read the whole codebase.',
-      'Threat assessment: none. Deadline assessment: dire, as always.',
-    ],
-  },
-
-  pads: [
-    {
-      label: 'DO NOT PRESS',
-      response: 'You pressed it. Obviously. Internet flooding levels: +1.',
-      color: '#ff4d6d',
-    },
-    {
-      label: 'SELF DESTRUCT',
-      response: 'Self destruct in 3… 2… 1… just kidding. The code is more stable than that. Usually.',
-      color: '#ffb15e',
-    },
-    {
-      label: 'HIRE ME',
-      response: 'Excellent choice. Opening the comms channel…',
-      color: '#2ee6a6',
-    },
-    {
-      label: "DON'T HIRE ME",
-      response: 'Bold strategy. Respectfully declining your decline. Try the green one.',
-      color: '#9b7bff',
-    },
+  channels: [
+    { id: 'telegram', label: 'Telegram', handle: '@Inwekobong', url: 'https://t.me/Inwekobong' },
+    { id: 'x', label: 'X', handle: '@INWEKOBONG', url: 'https://x.com/INWEKOBONG' },
+    { id: 'instagram', label: 'Instagram', handle: '@poweressiien', url: 'https://www.instagram.com/poweressiien' },
+    { id: 'tiktok', label: 'TikTok', handle: '@poweressien', url: 'https://www.tiktok.com/@poweressien' },
+    { id: 'facebook', label: 'Facebook', handle: 'poweressiien', url: 'https://www.facebook.com/poweressiien' },
+    { id: 'pinterest', label: 'Pinterest', handle: 'poweressien', url: 'https://pin.it/vzupxamLX' },
   ],
+
+  concierge: { name: 'Concierge', tagline: 'Ask anything about the work' },
 }
 
-export const hasEmail = () => /@/.test(portfolio.email) && !portfolio.email.includes('ADD_YOUR_EMAIL')
+export const hasEmail = () => /@/.test(portfolio.email)
 export const hasWhatsApp = () => portfolio.whatsappNumber.replace(/\D/g, '').length >= 8

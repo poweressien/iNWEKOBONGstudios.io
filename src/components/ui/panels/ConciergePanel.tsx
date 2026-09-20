@@ -1,29 +1,27 @@
 import { useEffect, useRef, useState } from 'react'
 import { Panel } from '../Panel'
-import { useGame } from '@/store/gameStore'
+import { useApp } from '@/store/appStore'
 import { portfolio } from '@/data/portfolio'
-import { greeting, obiReply, type Reply } from '@/game/ai'
-import { sfx } from '@/game/audio'
+import { greeting, conciergeReply, type Reply } from '@/lib/ai'
 import { IconSend } from '../Icons'
 
 interface Msg {
-  from: 'obi' | 'me'
+  from: 'bot' | 'me'
   text: string
   open?: Reply['open']
 }
 
 // Module-level so the conversation survives closing and reopening the panel.
-let history: Msg[] = [{ from: 'obi', text: greeting.text }]
+let history: Msg[] = [{ from: 'bot', text: greeting.text }]
 let lastChips: string[] = greeting.chips
 
-export default function ChatPanel() {
+export default function ConciergePanel() {
   const [msgs, setMsgs] = useState<Msg[]>(history)
   const [chips, setChips] = useState<string[]>(lastChips)
   const [text, setText] = useState('')
   const [typing, setTyping] = useState(false)
   const endRef = useRef<HTMLDivElement>(null)
-  const openPanel = useGame((s) => s.openPanel)
-  const bump = useGame((s) => s.bump)
+  const open = useApp((s) => s.open)
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: 'end' })
@@ -32,47 +30,35 @@ export default function ChatPanel() {
   function ask(raw: string) {
     const q = raw.trim()
     if (!q || typing) return
-    sfx.click()
     const next: Msg[] = [...msgs, { from: 'me', text: q }]
     history = next
     setMsgs(next)
     setText('')
     setChips([])
     setTyping(true)
-    bump('chat')
-    const reply = obiReply(q)
+    const reply = conciergeReply(q)
     setTimeout(() => {
-      sfx.message()
-      const done: Msg[] = [...next, { from: 'obi', text: reply.text, open: reply.open }]
+      const done: Msg[] = [...next, { from: 'bot', text: reply.text, open: reply.open }]
       history = done
       lastChips = reply.chips
       setMsgs(done)
       setChips(reply.chips)
       setTyping(false)
-    }, 380 + Math.min(900, reply.text.length * 7))
+    }, 350 + Math.min(800, reply.text.length * 6))
   }
 
-  const go = (o: NonNullable<Reply['open']>) => {
-    if (o.panel === 'project' && o.id) openPanel('project', o.id)
-    else openPanel(o.panel)
-  }
+  const go = (o: NonNullable<Reply['open']>) => (o.panel === 'project' && o.id ? open('project', o.id) : open(o.panel))
 
   return (
-    <Panel title={portfolio.ai.name} kicker={portfolio.ai.tagline.toUpperCase()} accent="#7fd0ff" fill>
-      <div className="flex h-full flex-col">
+    <Panel eyebrow={portfolio.concierge.tagline.toUpperCase()} title={portfolio.concierge.name} fill>
+      <div className="flex min-h-0 flex-1 flex-col">
         <div className="scroll-y -mx-1 min-h-0 flex-1 space-y-3 px-1 pb-2" aria-live="polite">
           {msgs.map((m, i) => (
             <div key={i} className={`flex ${m.from === 'me' ? 'justify-end' : 'justify-start'}`}>
-              <div className="max-w-[86%]">
-                <div
-                  className={`rounded-2xl px-3.5 py-2.5 text-[15px] leading-relaxed ${
-                    m.from === 'me' ? 'rounded-br-md bg-gradient-to-br from-accent to-violet text-[#060818]' : 'rounded-bl-md border border-white/10 bg-white/[0.06] text-white/90'
-                  }`}
-                >
-                  {m.text}
-                </div>
+              <div className="max-w-[88%]">
+                <div className={`rounded-2xl px-4 py-2.5 text-[14.5px] leading-relaxed ${m.from === 'me' ? 'rounded-br-md bg-white text-[#070912]' : 'rounded-bl-md border border-white/10 bg-white/[0.05] text-white/90'}`}>{m.text}</div>
                 {m.open && (
-                  <button className="btn mt-2 !min-h-[36px] !px-3 !py-1.5 !text-[13px]" onClick={() => go(m.open!)}>
+                  <button className="btn mt-2 !min-h-[34px] !px-3.5 !text-[12.5px]" onClick={() => go(m.open!)}>
                     {m.open.label} →
                   </button>
                 )}
@@ -80,8 +66,8 @@ export default function ChatPanel() {
             </div>
           ))}
           {typing && (
-            <div className="flex justify-start">
-              <div className="flex gap-1 rounded-2xl rounded-bl-md border border-white/10 bg-white/[0.06] px-4 py-3.5" aria-label="OBI is typing">
+            <div className="flex">
+              <div className="flex gap-1 rounded-2xl rounded-bl-md border border-white/10 bg-white/[0.05] px-4 py-3.5" aria-label="Typing">
                 {[0, 1, 2].map((i) => (
                   <span key={i} className="h-1.5 w-1.5 rounded-full bg-white/70" style={{ animation: `dots 1s ${i * 0.15}s infinite` }} />
                 ))}
@@ -94,7 +80,7 @@ export default function ChatPanel() {
         {chips.length > 0 && (
           <div className="flex flex-wrap gap-2 pb-2 pt-1">
             {chips.map((c) => (
-              <button key={c} className="chip !text-[13px] hover:bg-white/12" onClick={() => ask(c)}>
+              <button key={c} className="chip hover:border-white/30" onClick={() => ask(c)}>
                 {c}
               </button>
             ))}
@@ -111,11 +97,11 @@ export default function ChatPanel() {
           <input
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder={`Ask ${portfolio.ai.name} anything…`}
-            className="min-w-0 flex-1 rounded-xl border border-white/12 bg-white/5 px-3.5 py-3 outline-none placeholder:text-white/35 focus:border-accent/60"
+            placeholder="Ask about the work, the stack, or hiring…"
+            className="min-w-0 flex-1 rounded-full border border-white/12 bg-white/[0.04] px-5 py-3 outline-none transition placeholder:text-white/35 focus:border-white/40"
             aria-label="Message"
           />
-          <button type="submit" className="btn btn-primary !px-4" aria-label="Send" disabled={!text.trim() || typing}>
+          <button type="submit" className="btn btn-primary !w-11 !px-0" aria-label="Send" disabled={!text.trim() || typing}>
             <IconSend />
           </button>
         </form>

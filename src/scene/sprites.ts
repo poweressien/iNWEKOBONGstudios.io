@@ -72,19 +72,18 @@ export function makeStarTile(size: number, count: number, seed: number): HTMLCan
   return c
 }
 
-export function makeNebula(size: number): HTMLCanvasElement {
+export function makeNebula(size: number, palette: string[] = ['#3a4bff', '#8a3dff', '#0fb6a8', '#ff4f9a'], strength = 0.2): HTMLCanvasElement {
   const c = document.createElement('canvas')
   c.width = c.height = size
   const g = c.getContext('2d')!
   const rnd = mulberry32(42)
-  const palette = ['#3a4bff', '#8a3dff', '#0fb6a8', '#ff4f9a']
   for (let i = 0; i < 9; i++) {
     const x = rnd() * size
     const y = rnd() * size
     const r = size * (0.16 + rnd() * 0.24)
     const col = palette[i % palette.length]
     const grad = g.createRadialGradient(x, y, 0, x, y, r)
-    grad.addColorStop(0, rgba(col, 0.2))
+    grad.addColorStop(0, rgba(col, strength))
     grad.addColorStop(1, rgba(col, 0))
     g.fillStyle = grad
     g.fillRect(x - r, y - r, r * 2, r * 2)

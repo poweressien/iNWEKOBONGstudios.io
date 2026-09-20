@@ -1,83 +1,72 @@
-import { Panel } from '../Panel'
-import { useGame } from '@/store/gameStore'
+import { Panel, Section } from '../Panel'
+import { useApp } from '@/store/appStore'
 import { projects } from '@/data/projects'
-import { IconChevronLeft, IconChevronRight, IconExternal, IconGithub } from '../Icons'
+import { IconArrowUR, IconBack, IconGithub } from '../Icons'
 
 export default function ProjectPanel() {
-  const id = useGame((s) => s.projectId)
-  const openPanel = useGame((s) => s.openPanel)
-  const viewProject = useGame((s) => s.viewProject)
-
+  const id = useApp((s) => s.projectId)
+  const open = useApp((s) => s.open)
   const idx = projects.findIndex((p) => p.id === id)
   const p = projects[idx]
   if (!p) return null
-
-  const go = (n: number) => {
-    const next = projects[(idx + n + projects.length) % projects.length]
-    viewProject(next.id)
-    openPanel('project', next.id)
-  }
-
+  const go = (n: number) => open('project', projects[(idx + n + projects.length) % projects.length].id)
   const hasLink = !!(p.githubUrl || p.liveUrl)
 
   return (
     <Panel
+      eyebrow={`LEVEL 02 · WORK · ${String(idx + 1).padStart(2, '0')} / ${String(projects.length).padStart(2, '0')}`}
       title={p.title}
-      kicker={`PROJECT ${String(idx + 1).padStart(2, '0')} / ${String(projects.length).padStart(2, '0')}`}
-      accent={p.accent}
       footer={
-        <div className="flex shrink-0 items-center justify-between gap-2 border-t border-white/10 px-4 py-3">
-          <button className="btn !px-3" onClick={() => go(-1)} aria-label="Previous project">
-            <IconChevronLeft /> <span className="hidden sm:inline">Prev</span>
+        <div className="flex shrink-0 items-center justify-between gap-2 border-t border-white/10 px-5 py-3">
+          <button className="btn !px-4" onClick={() => go(-1)}>
+            <IconBack /> Prev
           </button>
-          <button className="btn" onClick={() => openPanel('projects')}>
-            All projects
+          <button className="btn" onClick={() => open('work')}>
+            All work
           </button>
-          <button className="btn !px-3" onClick={() => go(1)} aria-label="Next project">
-            <span className="hidden sm:inline">Next</span> <IconChevronRight />
+          <button className="btn !px-4" onClick={() => go(1)}>
+            Next <IconBack className="rotate-180" />
           </button>
         </div>
       }
     >
-      <div className="mb-3 flex flex-wrap gap-2">
+      <div className="flex flex-wrap gap-1.5">
         {p.tags.map((t) => (
-          <span key={t} className="rounded-md px-2.5 py-1 font-mono text-[11px] font-bold uppercase tracking-wider" style={{ background: `${p.accent}26`, color: p.accent }}>
+          <span key={t} className="rounded-full border border-white/15 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-white/65">
             {t}
           </span>
         ))}
       </div>
+      <p className="mt-5 text-[16px] font-light leading-relaxed text-white/90">{p.description}</p>
 
-      <p className="text-[15px] leading-relaxed text-white/85">{p.description}</p>
-
-      <div className="mt-5">
-        <div className="mb-2 font-mono text-[10px] tracking-[0.3em] text-white/45">BUILT WITH</div>
+      <Section title="Built with">
         <div className="flex flex-wrap gap-2">
           {p.tech.map((t) => (
-            <span key={t} className="chip !text-[13px]" style={{ borderColor: `${p.accent}66` }}>
+            <span key={t} className="chip">
               {t}
             </span>
           ))}
         </div>
-      </div>
+      </Section>
 
-      <div className="mt-6 flex flex-wrap gap-2.5">
+      <div className="mt-8 flex flex-wrap gap-3">
         {p.githubUrl && (
           <a className="btn btn-primary" href={p.githubUrl} target="_blank" rel="noreferrer noopener">
-            <IconGithub size={18} /> View code
+            <IconGithub size={16} /> View code
           </a>
         )}
         {p.liveUrl && (
           <a className="btn btn-primary" href={p.liveUrl} target="_blank" rel="noreferrer noopener">
-            <IconExternal /> Open live
+            Open live <IconArrowUR />
           </a>
         )}
         {!hasLink && (
-          <button className="btn" onClick={() => openPanel('contact')}>
-            Ask about this project
+          <button className="btn" onClick={() => open('signal')}>
+            Request a walkthrough
           </button>
         )}
       </div>
-      {!hasLink && <p className="mt-3 text-xs text-white/45">A public link isn't published yet — get in touch for a walkthrough.</p>}
+      {!hasLink && <p className="mt-3 text-[12.5px] text-white/40">A public link isn't published for this project yet.</p>}
     </Panel>
   )
 }

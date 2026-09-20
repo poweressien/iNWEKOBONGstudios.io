@@ -1,5 +1,5 @@
 {
-  "name": "inwekobong-studios",
+  "name": "inwekobong-technologies",
   "private": true,
   "version": "2.0.0",
   "type": "module",
@@ -13,7 +13,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@fontsource/rajdhani": "^5.2.5",
+    "@fontsource/inter-tight": "^5.2.5",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "zustand": "^5.0.15"

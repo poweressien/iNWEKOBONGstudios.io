@@ -1,6 +1,6 @@
 export interface Skill {
   name: string
-  color: string
+  group: 'Backend' | 'Frontend & Mobile' | 'Graphics & Tooling'
 }
 
 export interface ExperienceEntry {
@@ -10,52 +10,35 @@ export interface ExperienceEntry {
   description: string
 }
 
-export interface PlanetInfo {
-  name: string
-  tagline: string
-  blurb: string
-  color: string
-}
-
-export interface PadInfo {
+export interface Channel {
+  id: string
   label: string
-  response: string
-  color: string
-}
-
-export interface AIConfig {
-  name: string
-  tagline: string
-  lines: string[]
+  handle: string
+  url: string
 }
 
 export interface PortfolioConfig {
   name: string
+  domain: string
   role: string
   headline: string
   tagline: string
   location: string
-  bio: string
+  bio: string[]
   studio: string
   education: string
   experience: ExperienceEntry[]
-  interests: string[]
+  focus: string[]
   skills: Skill[]
-  /** Leave as the placeholder (or empty) and the site simply hides the email button. */
   email: string
+  phone: string
+  whatsappNumber: string
   githubUsername: string
   githubUrl: string
-  linkedinUrl: string
-  /** Digits only, with country code — e.g. 2348012345678. Blank hides the WhatsApp button. */
-  whatsappNumber: string
-  /** Optional Formspree-style endpoint. When blank the form opens a pre-filled email instead. */
+  /** Optional Formspree-style endpoint. Blank = the form opens a pre-filled email instead. */
   contactFormEndpoint: string
-  /** Where the floating PC on the GitHub planet sends visitors. */
-  externalSiteUrl: string
-  planetGithub: PlanetInfo
-  planetHome: PlanetInfo
-  ai: AIConfig
-  pads: PadInfo[]
+  channels: Channel[]
+  concierge: { name: string; tagline: string }
 }
 
 export type ProjectTag = 'game' | 'web' | 'mobile'
@@ -63,7 +46,6 @@ export type ProjectTag = 'game' | 'web' | 'mobile'
 export interface ProjectData {
   id: string
   title: string
-  /** Short arcade-marquee name (max ~9 chars looks best). */
   short: string
   description: string
   tech: string[]
