@@ -4,6 +4,7 @@ import { useApp } from '@/store/appStore'
 import { projects } from '@/data/projects'
 import { levels } from '@/data/levels'
 import { IconArrow } from '../Icons'
+import { ProjectMark } from '../ProjectMark'
 import type { ProjectTag } from '@/types'
 
 const lv = levels[1]
@@ -38,9 +39,14 @@ export default function WorkPanel() {
         {list.map(({ p, i }) => (
           <li key={p.id}>
             <button onClick={() => open('project', p.id)} className="group flex w-full items-start gap-4 py-4 text-left">
-              <span className="w-6 shrink-0 pt-1 font-mono text-[11px] text-gold">{String(i + 1).padStart(2, '0')}</span>
+              <span className="w-[52px] shrink-0">
+                <ProjectMark id={p.id} accent={p.accent} width={52} height={52} />
+              </span>
               <span className="min-w-0 flex-1">
-                <span className="block text-[17px] font-medium tracking-tight">{p.title}</span>
+                <span className="block text-[17px] font-medium tracking-tight">
+                  <span className="mr-2 font-mono text-[11px] text-gold">{String(i + 1).padStart(2, '0')}</span>
+                  {p.title}
+                </span>
                 <span className="mt-1 line-clamp-2 block text-[13.5px] leading-snug text-white/55">{firstSentence(p.description)}</span>
                 <span className="mt-2.5 flex flex-wrap gap-1.5">
                   {p.tags.map((t) => (

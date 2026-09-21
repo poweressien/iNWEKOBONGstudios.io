@@ -8,6 +8,7 @@ export function Dock() {
   const hover = useApp((s) => s.hover)
   const open = useApp((s) => s.open)
   const setHover = useApp((s) => s.setHover)
+  const tourOn = useApp((s) => s.tour.active)
   const shift = usePanelShift()
 
   const activeIdx = panel === 'project' ? 1 : levels.findIndex((l) => l.panel === panel)
@@ -15,7 +16,7 @@ export function Dock() {
   return (
     <nav
       aria-label="Levels"
-      className={`absolute inset-x-0 bottom-0 z-30 flex justify-center px-3 transition-all duration-700 ${ready ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'} ${panel ? 'max-[899px]:pointer-events-none max-[899px]:translate-y-6 max-[899px]:opacity-0' : ''}`}
+      className={`absolute inset-x-0 bottom-0 z-30 flex justify-center px-3 transition-all duration-700 ${ready && !tourOn ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-4 opacity-0'} ${panel ? 'max-[899px]:pointer-events-none max-[899px]:translate-y-6 max-[899px]:opacity-0' : ''}`}
       style={{ paddingBottom: 'calc(var(--safe-b) + 18px)', paddingRight: shift ? shift + 12 : undefined }}
     >
       <div className="glass-soft flex items-center gap-0.5 rounded-full p-1 min-[900px]:gap-1 min-[900px]:p-1.5">

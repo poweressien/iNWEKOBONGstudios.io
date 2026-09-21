@@ -3,6 +3,7 @@ import { glow, makeNebula, makeStarTile, mulberry32, rgba } from './sprites'
 import { levels } from '@/data/levels'
 import { portfolio } from '@/data/portfolio'
 import { useApp } from '@/store/appStore'
+import { ambience } from '@/lib/audio'
 
 type Ctx = CanvasRenderingContext2D
 const TAU = Math.PI * 2
@@ -40,11 +41,19 @@ const DISC_R = 980
 const DISC_DEPTH = 46
 
 /* Light sources: a low warm sun and a big cool planet. Horizontal directions only. */
-const SUN = { az: 2.02, el: 0.3 }
 const PLANET = { az: 4.31, el: 0.2 }
+/** The sun moves along an arc: t = 0 dawn … 0.5 golden light (the default) … 1 dusk. */
+const SUN = { az: 2.02, el: 0.3, k: 1, lx: Math.sin(2.02), lz: Math.cos(2.02) }
+function setSun(t: number) {
+  SUN.az = 2.02 + (t - 0.5) * 4.2
+  SUN.el = -0.08 + 0.38 * Math.sin(Math.PI * clamp(t, 0, 1))
+  SUN.k = clamp((SUN.el + 0.03) / 0.14, 0, 1)
+  SUN.lx = Math.sin(SUN.az)
+  SUN.lz = Math.cos(SUN.az)
+}
 const lightDir = (az: number) => ({ x: Math.sin(az), z: Math.cos(az) })
-const LS = lightDir(SUN.az)
 const LP = lightDir(PLANET.az)
+const TOUR_YAWS = [0.62, 1.0, 0.25, 0.9, 0.45]
 
 const levelAtY = (y: number) => {
   for (let i = 0; i < levels.length; i++) if (y >= levels[i].y0 - 4 && y <= levels[i].y1 + 4) return i
@@ -151,6 +160,18 @@ export class Scene {
   private lastInteract = 0
   private discTop = new Path2D()
 
+  private sunT = 0.5
+  private sunPhase = 0
+  private wasAuto = false
+  private sunPush = 0
+  private yawGoal: number | null = null
+  private lastTourStep = -1
+  private spinT = -1
+  private spinBase = 0
+  private pulseT = -1
+  private beacon2 = { x: -999, y: -999, hot: false }
+  private meteors: { x: number; y: number; vx: number; vy: number; life: number; max: number }[] = []
+  private meteorTimer = 6
   private signW1 = 0
   private signW2 = 0
   private signDirty = true
@@ -213,7 +234,24 @@ export class Scene {
     if (o.zoom !== undefined) this.userZoom = o.zoom
   }
 
-  /** Rotate to a level's face and open its panel (used by the dock and keyboard). */
+  /** A pulse of light travels up the tower and out through the beacon. */
+  transmit() {
+    if (this.pulseT >= 0 && this.pulseT < 1.2) return
+    this.pulseT = 0
+    ambience.tick()
+  }
+  /** One slow full rotation around the tower. */
+  spin() {
+    this.spinT = 0
+    this.spinBase = this.yaw
+    this.yawGoal = null
+  }
+  resetView() {
+    this.userZoom = 1
+    this.userPitch = 0
+    this.yawGoal = 0.62
+  }
+
   skipIntro() {
     this.introSpeed = 3.2
   }
@@ -228,8 +266,10 @@ export class Scene {
     const el = e.target as HTMLElement | null
     if (el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA')) return
     const st = useApp.getState()
+    if (st.palette) return
     if (e.code === 'Escape') {
-      if (st.panel) st.close()
+      if (st.tour.active) st.endTour()
+      else if (st.panel) st.close()
       return
     }
     if (!st.ready) return
@@ -283,6 +323,8 @@ export class Scene {
       return
     }
     if (this.moved > 5) {
+      this.yawGoal = null
+      this.spinT = -1
       this.yaw -= dx * 0.0052
       this.yawVel = -dx * 0.0052 * 60 * 0.6
       this.userPitch = clamp(this.userPitch + dy * 0.0018, -0.14, 0.16)
@@ -298,7 +340,10 @@ export class Scene {
       const rect = this.canvas.getBoundingClientRect()
       const hit = this.hitTest(e.clientX - rect.left, e.clientY - rect.top)
       const st = useApp.getState()
+      const mx = e.clientX - rect.left
+      const my = e.clientY - rect.top
       if (hit >= 0 && st.ready) st.open(levels[hit].panel)
+      else if (st.ready && Math.hypot(mx - this.beacon2.x, my - this.beacon2.y) < 30) this.transmit()
       else if (st.panel && st.ready) st.close()
     }
   }
@@ -310,6 +355,7 @@ export class Scene {
 
   private onLeave = () => {
     this.mouse.on = false
+    this.beacon2.hot = false
     this.parX = 0
     this.parY = 0
     useApp.getState().setHover(null)
@@ -324,7 +370,8 @@ export class Scene {
   private updateHover(x: number, y: number) {
     const h = this.hitTest(x, y)
     useApp.getState().setHover(h >= 0 ? h : null)
-    this.canvas.style.cursor = h >= 0 ? 'pointer' : 'grab'
+    this.beacon2.hot = h < 0 && useApp.getState().ready && Math.hypot(x - this.beacon2.x, y - this.beacon2.y) < 30
+    this.canvas.style.cursor = h >= 0 || this.beacon2.hot ? 'pointer' : 'grab'
   }
 
   private hitTest(x: number, y: number): number {
@@ -369,8 +416,10 @@ export class Scene {
   }
 
   private focusLevel(): number {
-    const p = useApp.getState().panel
-    if (!p || p === 'menu' || p === 'concierge') return -1
+    const st = useApp.getState()
+    if (st.tour.active) return st.tour.step
+    const p = st.panel
+    if (!p || p === 'concierge') return -1
     if (p === 'project') return 1
     return levels.findIndex((l) => l.panel === p)
   }
@@ -389,19 +438,77 @@ export class Scene {
     const focus = this.focusLevel()
     const desk = this.W >= 900
     const panelOpen = !!st.panel
+    const tourOn = st.tour.active
 
-    // idle drift + inertia
-    const auto = reduced ? 0 : focus >= 0 ? 0.012 : 0.034
-    if (!dragging) {
+    // guided tour: glide the camera round to a flattering angle for each level
+    if (tourOn && st.tour.step !== this.lastTourStep) {
+      this.lastTourStep = st.tour.step
+      this.yawGoal = TOUR_YAWS[st.tour.step % TOUR_YAWS.length]
+    }
+    if (!tourOn) this.lastTourStep = -1
+
+    // idle drift + inertia + glides
+    const auto = reduced || !st.orbit || tourOn ? 0 : focus >= 0 ? 0.012 : 0.034
+    if (this.spinT >= 0) {
+      this.spinT += dt / 2.6
+      const e = this.spinT >= 1 ? 1 : 0.5 - 0.5 * Math.cos(Math.PI * this.spinT)
+      this.yaw = this.spinBase + TAU * e
+      if (this.spinT >= 1) this.spinT = -1
+    } else if (this.yawGoal !== null && !dragging) {
+      const d = wrapAngle(this.yawGoal - this.yaw)
+      this.yaw += d * (1 - Math.exp(-dt * 1.6))
+      if (Math.abs(d) < 0.01) this.yawGoal = null
+    } else if (!dragging) {
       this.yaw += (auto + this.yawVel) * dt
       this.yawVel *= Math.exp(-dt * 2.4)
     } else this.yawVel *= Math.exp(-dt * 8)
 
-    // scene viewport shifts away from an open panel
+    // the sun: follows the slider, or cycles on its own
+    if (st.sunAuto) {
+      if (!this.wasAuto) this.sunPhase = Math.acos(clamp(1 - 2 * this.sunT, -1, 1))
+      this.sunPhase += dt / 32
+      this.sunT = (1 - Math.cos(this.sunPhase)) / 2
+      this.sunPush += dt
+      if (this.sunPush > 0.15) {
+        this.sunPush = 0
+        useApp.setState({ sunT: this.sunT })
+      }
+    } else {
+      this.sunT = lerp(this.sunT, st.sunT, 1 - Math.exp(-dt * 4))
+    }
+    this.wasAuto = st.sunAuto
+    setSun(this.sunT)
+
+    // beacon pulse
+    if (this.pulseT >= 0) {
+      this.pulseT += dt
+      if (this.pulseT > 3.4) this.pulseT = -1
+    }
+
+    // shooting stars
+    if (!reduced && this.introT >= 1) {
+      this.meteorTimer -= dt
+      if (this.meteorTimer <= 0) {
+        this.meteorTimer = 7 + Math.random() * 9
+        const ang = 0.35 + Math.random() * 0.4
+        const sp = 900 + Math.random() * 500
+        this.meteors.push({ x: Math.random() * this.W * 0.9, y: Math.random() * this.H * 0.4, vx: Math.cos(ang) * sp, vy: Math.sin(ang) * sp, life: 0, max: 0.7 + Math.random() * 0.4 })
+      }
+    }
+    for (let i = this.meteors.length - 1; i >= 0; i--) {
+      const m = this.meteors[i]
+      m.life += dt
+      m.x += m.vx * dt
+      m.y += m.vy * dt
+      if (m.life > m.max) this.meteors.splice(i, 1)
+    }
+
+    // scene viewport shifts away from an open panel or the tour caption
     let cxT = this.W / 2
     let cyT = this.H * (desk ? 0.5 : 0.49)
     if (panelOpen && desk) cxT = (this.W - (Math.min(540, this.W * 0.46) + 32)) / 2
     if (panelOpen && !desk) cyT = (this.H * 0.4) / 2 + 24
+    if (tourOn) cyT = desk ? this.H * 0.43 : (this.H - 250) / 2 + 55
 
     const introE = ease(this.introT)
     const aspect = this.W / this.H
@@ -456,10 +563,14 @@ export class Scene {
 
     ctx.setTransform(this.dpr, 0, 0, this.dpr, 0, 0)
     this.drawSky(ctx, cam)
+    this.drawMeteors(ctx)
     this.drawDisc(ctx, cam, intro)
     this.drawReflection(ctx, cam, active, intro)
+    const satFront = this.satelliteInFront(cam)
+    if (!satFront) this.drawSatellite(ctx, cam, intro)
     this.drawTower(ctx, cam, false, active, intro)
-    this.drawLabels(ctx, cam, active, focus, st.ready, st.panel !== null)
+    if (satFront) this.drawSatellite(ctx, cam, intro)
+    this.drawLabels(ctx, cam, active, focus, st.ready, st.panel !== null || st.tour.active)
 
     // fade in from black
     const fade = 1 - clamp(intro * 2.4, 0, 1)
@@ -611,10 +722,10 @@ export class Scene {
 
   private drawSun(ctx: Ctx, cam: Cam) {
     const s = this.sky(cam, SUN.az, SUN.el)
-    if (!s.ok) return
+    if (!s.ok || SUN.k < 0.02) return
     const { x, y } = s
     if (x < -600 || x > this.W + 600 || y < -600 || y > this.H + 600) return
-    const vis = clamp(1 - Math.hypot(x - this.W / 2, y - this.H / 2) / (this.W * 1.1), 0.25, 1)
+    const vis = clamp(1 - Math.hypot(x - this.W / 2, y - this.H / 2) / (this.W * 1.1), 0.25, 1) * SUN.k
     ctx.globalCompositeOperation = 'lighter'
     ctx.globalAlpha = 0.35 * vis
     ctx.drawImage(glow('#ffb46a'), x - 520, y - 520, 1040, 1040)
@@ -704,7 +815,7 @@ export class Scene {
       ctx.lineTo(bot[j][0], bot[j][1])
       ctx.lineTo(bot[i][0], bot[i][1])
       ctx.closePath()
-      const lit = clamp(Math.cos(a) * LS.x + Math.sin(a) * LS.z, 0, 1)
+      const lit = clamp(Math.cos(a) * SUN.lx + Math.sin(a) * SUN.lz, 0, 1) * SUN.k
       ctx.fillStyle = `rgb(${14 + lit * 44},${19 + lit * 34},${34 + lit * 22})`
       ctx.fill()
     }
@@ -767,7 +878,8 @@ export class Scene {
       const a = (i / 72) * TAU
       if (!project(cam, Math.cos(a) * DISC_R * 0.985, 0, Math.sin(a) * DISC_R * 0.985)) continue
       const chase = 0.5 + 0.5 * Math.sin(this.t * 1.1 - i * 0.35)
-      const al = (0.25 + chase * 0.6) * intro
+      const flash = this.pulseT >= 0 && this.pulseT < 1.8 ? 1 - this.pulseT / 1.8 : 0
+      const al = Math.min(1, (0.25 + chase * 0.6 + flash * 0.8) * intro)
       ctx.globalAlpha = al
       const s = 5 + chase * 5
       ctx.drawImage(glow('#cfe0ff'), P.x - s, P.y - s, s * 2, s * 2)
@@ -880,7 +992,7 @@ export class Scene {
     const ty0 = P.y
 
     // lighting
-    const sun = Math.max(0, nx * LS.x + nz * LS.z)
+    const sun = Math.max(0, nx * SUN.lx + nz * SUN.lz) * SUN.k
     const pl = Math.max(0, nx * LP.x + nz * LP.z)
     const sunK = Math.pow(sun, 1.2)
     const r = 12 + sunK * 150 + pl * 34
@@ -926,6 +1038,7 @@ export class Scene {
     // windows, bucketed by colour so each colour is a single fill
     const buckets = [new Path2D(), new Path2D(), new Path2D(), new Path2D()]
     const flick = Math.floor(this.t * 0.35)
+    const wy = this.pulseT >= 0 ? (this.pulseT / 1.4) * (TOWER_TOP + 160) : -9999
     const inShaft = ti === 1
     for (let rIdx = 0; rIdx < rows; rIdx++) {
       const yA = T.y0 + (rIdx + 0.3) * T.fh
@@ -944,9 +1057,10 @@ export class Scene {
         const h = hash(seed + 1)
         let lit = h < rowOn * 0.92
         if (hash(seed * 31 + flick * 2654435) < 0.012) lit = !lit
-        if (!lit) continue
+        const pulsing = Math.abs(yM - wy) < 90
+        if (!lit && !pulsing) continue
         const h2 = hash(seed + 5)
-        const bucket = lv >= 0 && lv === active ? 3 : h2 < 0.14 ? 1 : h2 < 0.58 ? 0 : 2
+        const bucket = pulsing || (lv >= 0 && lv === active) ? 3 : h2 < 0.14 ? 1 : h2 < 0.58 ? 0 : 2
         const path = buckets[bucket]
         if (!pt(uA, yA)) continue
         path.moveTo(P.x, P.y)
@@ -1093,12 +1207,119 @@ export class Scene {
 
   private beacon(ctx: Ctx, cam: Cam) {
     if (!project(cam, 0, TOWER_TOP, 0)) return
+    const bx = P.x
+    const by = P.y
+    this.beacon2.x = bx
+    this.beacon2.y = by
     const on = Math.sin(this.t * 2.4) > 0.2
+    const hot = this.beacon2.hot
     ctx.globalCompositeOperation = 'lighter'
-    ctx.globalAlpha = on ? 0.95 : 0.25
-    const r = 26
-    ctx.drawImage(glow('#ff7a6a'), P.x - r, P.y - r, r * 2, r * 2)
+    ctx.globalAlpha = on || hot ? 0.95 : 0.25
+    const r = hot ? 40 : 26
+    ctx.drawImage(glow(hot ? '#ffd9a0' : '#ff7a6a'), bx - r, by - r, r * 2, r * 2)
+    // transmit: a bloom at the tip, then rings expanding into space
+    if (this.pulseT >= 1.1) {
+      const k = this.pulseT - 1.1
+      const scale = cam.F / 900
+      ctx.globalAlpha = Math.max(0, 1 - k / 0.6)
+      ctx.drawImage(glow('#ffe2b8'), bx - 90 * scale, by - 90 * scale, 180 * scale, 180 * scale)
+      ctx.lineWidth = 1.6
+      for (let i = 0; i < 3; i++) {
+        const ph = (k - i * 0.32) / 1.7
+        if (ph <= 0 || ph >= 1) continue
+        ctx.globalAlpha = (1 - ph) * 0.6
+        ctx.strokeStyle = '#ffd9a0'
+        ctx.beginPath()
+        ctx.ellipse(bx, by, ph * 520 * scale, ph * 200 * scale, 0, 0, TAU)
+        ctx.stroke()
+      }
+    }
     ctx.globalAlpha = 1
+    ctx.globalCompositeOperation = 'source-over'
+    if (hot) {
+      ctx.font = `500 11px ${FONT}`
+      setSpacing(ctx, 2.2)
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillStyle = 'rgba(255,226,184,0.95)'
+      ctx.fillText('TRANSMIT', bx, by - 34)
+      setSpacing(ctx, 0)
+    }
+  }
+
+  /* ── ambient life: shooting stars and a satellite ── */
+
+  private drawMeteors(ctx: Ctx) {
+    if (!this.meteors.length) return
+    ctx.globalCompositeOperation = 'lighter'
+    ctx.lineCap = 'round'
+    for (const m of this.meteors) {
+      const k = m.life / m.max
+      const a = Math.sin(Math.PI * k)
+      const len = 140
+      const l = Math.hypot(m.vx, m.vy)
+      const tx = m.x - (m.vx / l) * len
+      const ty = m.y - (m.vy / l) * len
+      const g = ctx.createLinearGradient(tx, ty, m.x, m.y)
+      g.addColorStop(0, 'rgba(200,220,255,0)')
+      g.addColorStop(1, `rgba(235,242,255,${0.85 * a})`)
+      ctx.strokeStyle = g
+      ctx.lineWidth = 1.6
+      ctx.beginPath()
+      ctx.moveTo(tx, ty)
+      ctx.lineTo(m.x, m.y)
+      ctx.stroke()
+    }
+    ctx.lineCap = 'butt'
+    ctx.globalCompositeOperation = 'source-over'
+  }
+
+  private satPos(a: number): [number, number, number] {
+    const R = 1280
+    const tilt = 0.5
+    return [Math.cos(a) * R, 980 + Math.sin(a) * R * Math.sin(tilt) * 0.5, Math.sin(a) * R * Math.cos(tilt)]
+  }
+
+  private satelliteInFront(cam: Cam): boolean {
+    const a = this.t * 0.2
+    const [x, y, z] = this.satPos(a)
+    if (!project(cam, x, y, z)) return true
+    const d = P.z
+    if (!project(cam, 0, y, 0)) return true
+    return d < P.z
+  }
+
+  private drawSatellite(ctx: Ctx, cam: Cam, intro: number) {
+    if (intro < 0.9) return
+    const a = this.t * 0.2
+    ctx.globalCompositeOperation = 'lighter'
+    // faint trail behind it
+    ctx.lineWidth = 1
+    let prevX = 0
+    let prevY = 0
+    for (let i = 24; i >= 0; i--) {
+      const [x, y, z] = this.satPos(a - i * 0.03)
+      if (!project(cam, x, y, z)) continue
+      if (i < 24) {
+        ctx.strokeStyle = `rgba(190,215,255,${(1 - i / 24) * 0.35})`
+        ctx.beginPath()
+        ctx.moveTo(prevX, prevY)
+        ctx.lineTo(P.x, P.y)
+        ctx.stroke()
+      }
+      prevX = P.x
+      prevY = P.y
+    }
+    const [sx, sy, sz] = this.satPos(a)
+    if (project(cam, sx, sy, sz)) {
+      const blink = Math.sin(this.t * 3.2) > 0.6
+      ctx.globalAlpha = 0.9
+      ctx.fillStyle = '#eaf1ff'
+      ctx.fillRect(P.x - 1, P.y - 1, 2, 2)
+      ctx.globalAlpha = blink ? 0.9 : 0.25
+      ctx.drawImage(glow('#ff9a8a'), P.x - 9, P.y - 9, 18, 18)
+      ctx.globalAlpha = 1
+    }
     ctx.globalCompositeOperation = 'source-over'
   }
 
@@ -1179,6 +1400,11 @@ export class Scene {
       ctx.fillStyle = on ? '#ffe2b8' : 'rgba(228,236,255,0.88)'
       ctx.fillText(text, tx, my + 0.5)
       setSpacing(ctx, 0)
+      if (on && !panelOpen && !compact) {
+        ctx.font = `400 11px ${FONT}`
+        ctx.fillStyle = 'rgba(255,214,160,0.72)'
+        ctx.fillText(lv.blurb, tx, my + 17)
+      }
       ctx.globalAlpha = 1
     }
   }

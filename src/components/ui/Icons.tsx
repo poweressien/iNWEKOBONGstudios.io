@@ -37,6 +37,11 @@ export const IconGithub = ({ size = 18, className }: P) =>
     <path d="M9 19c-4.3 1.4-4.3-2.5-6-3m12 5v-3.5c0-1 .1-1.4-.5-2 2.8-.3 5.5-1.4 5.5-6a4.6 4.6 0 0 0-1.3-3.2 4.2 4.2 0 0 0-.1-3.2s-1.1-.3-3.5 1.3a12.3 12.3 0 0 0-6.2 0C6.5 2.8 5.4 3.1 5.4 3.1a4.2 4.2 0 0 0-.1 3.2A4.6 4.6 0 0 0 4 9.5c0 4.6 2.7 5.7 5.5 6-.6.6-.6 1.2-.5 2V21" />,
     className,
   )
+export const IconPlay = ({ size = 16, className }: P) => svg(size, <path d="M7 4.5v15l12-7.5z" fill="currentColor" />, className, 1.4)
+export const IconPause = ({ size = 16, className }: P) => svg(size, <path d="M8 5v14M16 5v14" />, className, 2.4)
+export const IconSearch = ({ size = 16, className }: P) => svg(size, <><circle cx="11" cy="11" r="6.5" /><path d="m16 16 4.5 4.5" /></>, className)
+export const IconSun = ({ size = 17, className }: P) =>
+  svg(size, <><circle cx="12" cy="12" r="4" /><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.2 5.2 7 7M17 17l1.8 1.8M18.8 5.2 17 7M7 17l-1.8 1.8" /></>, className)
 export const IconStar = ({ size = 13, className }: P) => svg(size, <path d="m12 3 2.7 5.7 6.3.8-4.6 4.3 1.2 6.2L12 17l-5.6 3 1.2-6.2L3 9.5l6.3-.8z" />, className)
 
 export const Monolith = ({ size = 22 }: { size?: number }) => (

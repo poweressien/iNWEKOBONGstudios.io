@@ -19,7 +19,6 @@ export function Intro() {
       <div className="mt-6 h-px w-40 overflow-hidden bg-white/10">
         <div className="h-full w-full origin-left bg-white/70" style={{ animation: 'fade-in 0.4s both, grow 3.4s cubic-bezier(.3,.7,.2,1) both' }} />
       </div>
-      <style>{'@keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}'}</style>
     </div>
   )
 }

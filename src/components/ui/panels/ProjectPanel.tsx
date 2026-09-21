@@ -2,6 +2,7 @@ import { Panel, Section } from '../Panel'
 import { useApp } from '@/store/appStore'
 import { projects } from '@/data/projects'
 import { IconArrowUR, IconBack, IconGithub } from '../Icons'
+import { ProjectMark } from '../ProjectMark'
 
 export default function ProjectPanel() {
   const id = useApp((s) => s.projectId)
@@ -30,7 +31,8 @@ export default function ProjectPanel() {
         </div>
       }
     >
-      <div className="flex flex-wrap gap-1.5">
+      <ProjectMark id={p.id} accent={p.accent} width={480} height={130} animate />
+      <div className="mt-4 flex flex-wrap gap-1.5">
         {p.tags.map((t) => (
           <span key={t} className="rounded-full border border-white/15 px-3 py-1 text-[11px] uppercase tracking-[0.16em] text-white/65">
             {t}

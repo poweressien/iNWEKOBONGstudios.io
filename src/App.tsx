@@ -4,6 +4,9 @@ import { Hud } from '@/components/ui/TopBar'
 import { Dock } from '@/components/ui/Dock'
 import { Intro } from '@/components/ui/Intro'
 import { Panels } from '@/components/ui/Panels'
+import { TourCard } from '@/components/ui/TourCard'
+import { CommandPalette } from '@/components/ui/CommandPalette'
+import { Notice } from '@/components/ui/Notice'
 import { useApp } from '@/store/appStore'
 
 export default function App() {
@@ -20,6 +23,9 @@ export default function App() {
       <Hud />
       <Dock />
       <Panels />
+      <TourCard />
+      <Notice />
+      <CommandPalette />
     </div>
   )
 }

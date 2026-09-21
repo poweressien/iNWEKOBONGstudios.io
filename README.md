@@ -11,6 +11,14 @@ questions about the work from the site's own data.
 * Mobile: drag to orbit, pinch to zoom, tap a level or use the bottom dock
 * Optional synthesised ambience (off by default)
 
+### Things to play with
+
+* **Guided tour** — the camera visits each level with a caption (top bar → Tour)
+* **Command palette** — `Ctrl/⌘ K` or `/`: jump anywhere, open any project, control the scene (try `sudo`)
+* **Solar position** — move the sun (or let it cycle) and the tower relights (sun button)
+* **Transmit** — click the beacon on the spire and a pulse of light travels up the tower
+* **Living scene** — shooting stars, an orbiting satellite, a live Nigeria clock, and a generative emblem for every project
+
 ## Run it
 
 ```bash
